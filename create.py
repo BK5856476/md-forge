@@ -74,18 +74,62 @@ for filename in os.listdir(processing_dir):
         # 寻找该文档里的所有图片链接
         urls = md_pattern.findall(content) + html_pattern.findall(content)
         
-        # 去重并过滤掉并非 http 开头的本地已处理过的相对路径链接
-        valid_urls = list(set([u for u in urls if u.startswith('http')]))
+        # 先去重
+        unique_urls = list(set(urls))
+        # 挑选出网络图片和本地图片
+        valid_urls = [u for u in unique_urls if u.startswith('http')]
+        local_urls = [u for u in unique_urls if not u.startswith('http') and not u.startswith('data:')]
         
-        if not valid_urls:
-            print("   -> 没有在这个文档里发现新的网络图片链接。\n")
+        if not valid_urls and not local_urls:
+            print("   -> 没有在这个文档里发现新的网络或本地图片链接。\n")
             continue
             
-        print(f"   -> 共找出 {len(valid_urls)} 个网络图片链接，准备下载。")
+        print(f"   -> 共找出 {len(valid_urls)} 个网络链接，{len(local_urls)} 个本地链接。")
         new_content = content
         download_success = 0
+        local_success = 0
         
-        # 循环下载图片
+        # 循环处理本地图片
+        for url in local_urls:
+            try:
+                # 解析 URL 编码的相对路径（例如含空格）
+                real_rel_path = urllib.parse.unquote(url)
+                # 兼容不同操作系统的路径分隔符
+                real_rel_path = real_rel_path.replace('\\', '/')
+                
+                # 若使用了相对 assets 的旧地址，也需判定，避免重复拷贝
+                if real_rel_path.startswith(f"assets/{folder_name}/"):
+                    continue
+                    
+                src_filepath = os.path.join(processing_dir, real_rel_path)
+                
+                # 检查是否存在
+                if os.path.exists(src_filepath) and os.path.isfile(src_filepath):
+                    img_filename = os.path.basename(src_filepath)
+                    dst_filepath = os.path.join(target_folder, img_filename)
+                    
+                    if os.path.abspath(src_filepath) != os.path.abspath(dst_filepath):
+                        # 同名冲突处理
+                        counter = 1
+                        base_name, ext = os.path.splitext(img_filename)
+                        while os.path.exists(dst_filepath):
+                            dst_filepath = os.path.join(target_folder, f"{base_name}_{counter}{ext}")
+                            counter += 1
+                        
+                        shutil.copy2(src_filepath, dst_filepath)
+                        
+                    file_just_name = os.path.basename(dst_filepath)
+                    print(f"      📂 [本地OK] {file_just_name}")
+                    local_success += 1
+                    
+                    # 更新文档路径
+                    rel_path = f"assets/{folder_name}/{file_just_name}"
+                    encoded_rel_path = rel_path.replace(" ", "%20")
+                    new_content = new_content.replace(url, encoded_rel_path)
+            except Exception as e:
+                print(f"      ❌ [本地失败] url: {url} -> 错误: {e}")
+                
+        # 循环下载网络图片
         for i, url in enumerate(valid_urls, 1):
             try:
                 # 伪装请求头以防防盗链
@@ -144,4 +188,34 @@ for filename in os.listdir(processing_dir):
             
         processed_count += 1
 
+print("\n🧹 开始清理原始本地图片和空文件夹...")
+deleted_local_count = 0
+image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.bmp', '.svg', '.tif', '.tiff'}
+
+for root, dirs, files in os.walk(processing_dir, topdown=False):
+    # 跳过 assets 目录
+    if os.path.abspath(root) == os.path.abspath(assets_dir) or \
+       os.path.commonpath([os.path.abspath(root), os.path.abspath(assets_dir)]) == os.path.abspath(assets_dir):
+        continue
+        
+    for file in files:
+        ext = os.path.splitext(file)[1].lower()
+        if ext in image_extensions:
+            file_path = os.path.join(root, file)
+            try:
+                os.remove(file_path)
+                deleted_local_count += 1
+            except Exception as e:
+                print(f"⚠️ 删除本地图片失败 {file_path}: {e}")
+                
+    # 如果文件夹为空，且不是处理总目录，则删除
+    if root != processing_dir and not os.listdir(root):
+        try:
+            os.rmdir(root)
+        except Exception as e:
+            pass
+            
+if deleted_local_count > 0:
+    print(f"✅ 成功清理了 {deleted_local_count} 个原始/无用的本地图片（已被转移或未被引用）。\n")
+    
 print(f"🎉 运行结束！累计处理完成 {processed_count} 篇 MD 文档。")
