@@ -3,14 +3,18 @@ import re
 import urllib.request
 import urllib.parse
 import ssl
+import shutil
 
 # 忽略 SSL 证书验证，避免因证书问题导致无法下载 HTTPS 链接的图片
 ssl._create_default_https_context = ssl._create_unverified_context
 
-# 获取当前脚本的运行目录作为基础路径
-base_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取全局仓库根目录 (向上回退 3 级：scripts -> md-image-forge -> skills -> repo_root)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+skill_root = os.path.dirname(script_dir)
+skills_dir = os.path.dirname(skill_root)
+base_dir = os.path.dirname(skills_dir)
 
-# 定义两个主要文件夹路径
+# 定义两个主要文件夹路径 (位于仓库根目录)
 processing_dir = os.path.join(base_dir, "Clippings")
 assets_dir = os.path.join(processing_dir, "assets")
 
@@ -24,7 +28,7 @@ html_pattern = re.compile(r'<img\s+[^>]*src="([^"]+)"')
 
 processed_count = 0
 
-print("🚀 开始扫描并处理文档...\n")
+print("🚀 开始扫描并处理文档（全局共享模式）...\n")
 
 # 获取目前 Clippings 里有效的 MD 文件所对应的干净名字列表
 active_md_names = []
@@ -32,7 +36,6 @@ for filename in os.listdir(processing_dir):
     if filename.lower().endswith('.md'):
         active_md_names.append(os.path.splitext(filename)[0])
 
-import shutil
 deleted_count = 0
 # 检查 assets 文件夹，寻找孤儿资源目录并删除
 for asset_folder in os.listdir(assets_dir):

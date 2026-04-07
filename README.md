@@ -1,27 +1,67 @@
-# Markdown 图片素材自动化整理工具
+# MDForge (AI Skills Repository)
 
-## 🚀 简介
-这是一个轻量级且极具效率的自动化脚本，专门用于**完全托管式的 Markdown 资源整理**：
-- 它能提取文档中的网络图片，自动下载归档到专属的本地子目录中。
-- 它能**自动接管本地导出的繁乱图片文件夹**，将引用的图片按规范统一转移。
-- 最终将文档内所有图片链接无缝替换为标准的本地相对路径（含 URL 空格编码保护），并在最后执行**全自动的残差无用废图清理和空文件夹销毁**。
+A collection of AI-ready tools (Skills) designed to automate Markdown workflows, content management, and assets organization.
 
-## 📂 目录结构
-- **`create.py`**: 核心 Python 脚本代码。
-- **`一键处理图片.bat`**: 🌟 **双击执行入口**，免除任何行命令操作。
-- **`Clippings/`**: **（放置区）** 放入所有你需要被处理的 `.md` 草稿或截取文章。
-- **`assets/`**: **（产出区）** 脚本会自动在这个目录下生成与文章完全同名的专属文件夹，用于存放下好的图片。
+---
 
-## 💡 能干什么？
-1. **自动归档**：根据 `Clippings` 里的文件名，会在 `assets` 下对应生成整齐划一的同名专属图片库。
-2. **离线化迁移**：扫描全篇，把以 `http` 开头的网络配图无缝下载归档。
-3. **本地图集重构**：专门应付各类软件杂乱的本地导出逻辑。自动将所有被 Markdown 实际引用的本地图片抽丝剥茧，全部安全转移进专属的 `assets` 单间。
-4. **一键智能换链**：自动覆写原 `.md` 文稿，把旧的网络图床长链接、带有空格或不规则格式的原始本地路径，统统一键切换为优雅、安全的标准相对路径。
-5. **强迫症双重清理**：
-   - **失效仓库清理**：如果你不要某篇 `.md` 源文件并把它删了，运行脚本时会自动把 `assets` 里遗留的失效配图文件夹一并无痕销毁。
-   - **没用废图/空文件夹查杀**：搬家完毕后，原随文章一起塞进 `Clippings` 下方的冗余文件夹、未引用的无用源图片，会被脚本统统扫地出门，一次性彻底清除（你的空间里只有有用的东西）！
+## 🏛️ Architecture Overview
 
-## 🎯 怎么用？
-1. 把准备好的 `.md` 文件塞进 **`Clippings`** 文件夹（如果你是从其他软件导出的，只需连同它的附属图片文件夹**一并全丢进去**即可）。
-2. 回到外层，直接双击 **`一键处理图片.bat`**。
-3. 等待命令行提示运行完毕，按任意键关闭。随时打开文档检查成果，你会发现一切都整理得干干净净了！
+MDForge follows a **"Global Workspace, Modular Skills"** architecture. This design ensures that all automation tools share a common data area while maintaining independent logic and instructions.
+
+### 📁 Structure Tree
+```text
+md-forge/
+├── README.md               # [English] Project Overview & Navigation
+├── run_all_skills.bat       # [Master Runner] Executes all skills sequentially
+├── .gitignore              # Global git ignore rules
+├── LICENSE                 # MIT License
+├── Clippings/              # [Global Shared Area] Input/Output Workspace
+│   └── assets/             # Managed Assets produced by skills
+└── skills/                 # Skills container (Infinite extensibility)
+    ├── md-image-forge/      # [Skill] Markdown Image Organization
+    │   ├── SKILL.md        # AI instruction definition (Chinese)
+    │   ├── README.md       # Skill documentation (Chinese)
+    │   ├── process_images.bat # Manual execution script
+    │   └── scripts/        # Internal logic
+    └── md-format-standardizer/ # [Skill] Markdown Formatting
+        ├── SKILL.md        # AI instruction definition (Chinese)
+        ├── README.md       # Skill documentation (Chinese)
+        ├── process_format.bat # Manual execution script
+        └── scripts/        # Internal logic
+```
+
+### 🎯 Key Design Concepts
+1.  **Unified Inbox (Clippings/)**: A shared "Inbox/Outbox" for all skills. You drop your Markdown files at the root, and any enabled skill can process them.
+2.  **Self-Contained Skills**: Each folder in `skills/` is a standalone "Skill". It contains its own `SKILL.md` (metadata for AI) and `scripts/`.
+3.  **Master Scheduling**: The root `run_all_skills.bat` provides a convenient way to sequence multiple skills (e.g., first fetch images, then standardizing formatting).
+4.  **AI-Agent Ready**: Built with **SKILL.md** specifications, allowing AI assistants like Antigravity to discover, understand, and execute your tools automatically.
+
+---
+
+## 🚀 How to Run Skills
+
+### Option 1: Sequential Execution (All Skills)
+Run the **`run_all_skills.bat`** in the repository root. This script will iterate through the `skills/` directory and execute every available skill in sequence.
+
+### Option 2: Individual Execution
+Navigate to the specific skill directory (e.g., `skills/md-format-standardizer/`) and double-click its local `.bat` file (e.g., `process_format.bat`).
+
+---
+
+## 🛠️ Available Skills
+
+### 🖼️ [Markdown Image Forge](skills/md-image-forge/)
+**Purpose**: Automatically handles images in Markdown documents by downloading web images and migrating local images to a structured directory.
+
+### ✍️ [Markdown Format Standardizer](skills/md-format-standardizer/)
+**Purpose**: Standardizes Markdown text formatting. 
+**Features**:
+- Removes metadata blocks and separators.
+- Extracts author names and cleans footers.
+- Localizes formatting: link flattening, code block fix, and emoji removal.
+- New: Compact list layout.
+
+---
+
+## 📜 License
+This repository and all its skills are licensed under the **MIT License**.
