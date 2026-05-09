@@ -23,7 +23,8 @@ os.makedirs(processing_dir, exist_ok=True)
 os.makedirs(assets_dir, exist_ok=True)
 
 # 编译正则表达式，用于匹配 markdown 和 html 语法的图片链接
-md_pattern = re.compile(r'!\[.*?\]\((.*?)\)')
+# 改进后的 md_pattern：支持匹配包含圆括号的 URL（常见于某些图床链接）
+md_pattern = re.compile(r'!\[.*?\]\((https?://[^\s\(\)]*(?:\([^\s\(\)]*\)[^\s\(\)]*)*)\)')
 html_pattern = re.compile(r'<img\s+[^>]*src="([^"]+)"')
 
 processed_count = 0
@@ -138,7 +139,8 @@ for filename in os.listdir(processing_dir):
                 # 伪装请求头以防防盗链
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
                 parsed = urllib.parse.urlparse(url)
-                img_filename = os.path.basename(parsed.path)
+                # 对文件名进行解压 (unquote)，使中文文件名在本地可读
+                img_filename = urllib.parse.unquote(os.path.basename(parsed.path))
                 
                 # 用户常遇到没有后缀、带 '@' 拓展参数等链接问题处理
                 if not img_filename:
